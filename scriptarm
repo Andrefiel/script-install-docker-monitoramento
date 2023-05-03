@@ -472,5 +472,3 @@ Substitua `your_mysql_root_password`, `your_mysql_database_name`, `your_mysql_da
 
 Salve o script com um nome, por ex. setup.sh, torne-o executável com `sudo chmod +x setup.sh` e o execute com `./setup.sh` para executar o script. Verifique se todos os contêineres foram iniciados com `docker ps`.
 
-Created by https://GPTGO.ai
-#gptgo #chatgpt #freechatgpt #chatgptfree
