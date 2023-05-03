@@ -1,0 +1,379 @@
+#!/bin/bash
+
+# Atualiza o sistema
+sudo apt-get update && sudo apt-get dist-upgrade -y && sudo apt autoremove -y
+
+# Cria a pasta docker na raiz
+sudo mkdir /docker
+
+# Instala o Docker e Docker-Compose
+sudo apt-get install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo docker --version
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Acessa a pasta Docker
+cd /docker
+
+# Cria o arquivo docker-compose.yml com as definições dos containers
+cat > docker-compose.yml <<EOF
+version: '3.4'
+
+services:
+plex:
+container_name: plex
+image: linuxserver/plex:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/videos:/data
+- /location/of/plex/config:/config
+restart: always
+
+jellyfin:
+container_name: jellyfin
+image: jellyfin/jellyfin:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/videos:/data
+- /location/of/jellyfin/config:/config
+restart: always
+
+nextcloud:
+container_name: nextcloud
+image: nextcloud:fpm
+ports:
+- "8080:80"
+environment:
+- MYSQL_HOST=db
+- MYSQL_DATABASE=nextcloud
+- MYSQL_USER=ncuser
+- MYSQL_PASSWORD=mypassword
+volumes:
+- /location/of/nextcloud:/var/www/html
+- /location/of/nextcloud/db:/var/lib/mysql
+depends_on:
+- db
+restart: always
+
+db:
+container_name: db
+image: mariadb:latest
+environment:
+- MYSQL_DATABASE=nextcloud
+- MYSQL_USER=ncuser
+- MYSQL_PASSWORD=mypassword
+- MYSQL_ROOT_PASSWORD=myrootpassword
+volumes:
+- /location/of/db:/var/lib/mysql
+restart: always
+
+radarr:
+container_name: radarr
+image: linuxserver/radarr:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/videos:/movies
+- /location/of/radarr/config:/config
+restart: always
+
+sonarr:
+container_name: sonarr
+image: linuxserver/sonarr:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/videos:/tv
+- /location/of/sonarr/config:/config
+restart: always
+
+lidarr:
+container_name: lidarr
+image: linuxserver/lidarr:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/music:/music
+- /location/of/lidarr/config:/config
+restart: always
+
+jacket:
+container_name: jackett
+image: linuxserver/jackett:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/jackett/config:/config
+restart: always
+
+airsonic-advanced:
+container_name: airsonic-advanced
+image: airsonic/airsonic-advanced:armhf
+ports:
+- "4040:4040"
+volumes:
+- /location/of/music:/music
+- /location/of/playlists:/playlists
+- /location/of/podcast:/podcasts
+- /location/of/airsonic:/config
+restart: always
+
+bazarr:
+container_name: bazarr
+image: linuxserver/bazarr:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/movies:/movies
+- /location/of/tv:/tv
+- /location/of/subtitles:/subtitles
+- /location/of/bazarr/config:/config
+restart: always
+
+cockpit:
+container_name: cockpit
+image: linuxserver/cockpit:arm32v7-latest
+ports:
+- "9090:9090"
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock
+- /location/of/cockpit/config:/config
+privileged: true
+restart: always
+
+heimdall:
+container_name: heimdall
+image: linuxserver/heimdall:arm32v7-latest
+ports:
+- "80:80"
+- "443:443"
+volumes:
+- /location/of/heimdall/config:/config
+restart: always
+
+uptime-kuma:
+container_name: uptime-kuma
+image: uptime-kuma/uptime-kuma:armv7-latest
+ports:
+- "3000:3000"
+volumes:
+- /location/of/uptime-kuma/data:/data
+restart: always
+
+nginx-proxy-manager:
+container_name: nginx-proxy-manager
+image: linuxserver/nginx-proxy-manager:arm32v7-latest
+ports:
+- "81:81"
+- "444:444"
+- "8080:8080"
+volumes:
+- /location/of/nginx-proxy-manager:/config
+restart: always
+
+grafana:
+container_name: grafana
+image: grafana/grafana:arm32v7-latest
+ports:
+- "3003:3000"
+volumes:
+- /location/of/grafana:/var/lib/grafana
+restart: always
+
+portainer:
+container_name: portainer
+image: portainer/portainer-ce:arm-32v6-latest
+ports:
+- "9000:9000"
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock
+- /location/of/portainer/data:/data
+restart: always
+
+dozzle:
+container_name: dozzle
+image: amir20/dozzle
+ports:
+- "8888:8080"
+environment:
+- LOGSPOUT=ignore
+restart: always
+
+filebrowser:
+container_name: filebrowser
+image: linuxserver/filebrowser:arm32v7-latest
+ports:
+- "8081:80"
+volumes:
+- /location/of/files:/srv
+- /location/of/filebrowser/config:/config
+restart: always
+
+tautulli:
+container_name: tautulli
+image: linuxserver/tautulli:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/tautulli/config:/config
+- /location/of/plex/logs:/logs:ro
+restart: always
+
+ombi:
+container_name: ombi
+image: linuxserver/ombi:arm32v7-latest
+ports:
+- "3579:3579"
+volumes:
+- /location/of/ombi/config:/config
+- /location/of/plex:/plex
+restart: always
+
+prowlarr:
+container_name: prowlarr
+image: prowlarr/prowlarr:arm32v7-latest
+network_mode: host
+volumes:
+- /location/of/prowlarr/config:/config
+- /location/of/plex:/plex
+restart: always
+
+netdata:
+container_name: netdata
+image: netdata/netdata:arm32v7-latest
+ports:
+- "19999:19999"
+volumes:
+- /proc:/host/proc:ro
+- /sys:/host/sys:ro
+- /var/run/docker.sock:/var/run/docker.sock:ro
+restart: always
+
+influxdb:
+container_name: influxdb
+image: arm32v7/influxdb
+ports:
+- "8086:8086"
+volumes:
+- /location/of/influxdb:/var/lib/influxdb
+restart: always
+
+adguard-home:
+container_name: adguard-home
+image: adguard/adguardhome:armhf
+ports:
+- "80:80"
+- "443:443"
+- "53:53/tcp"
+- "53:53/udp"
+volumes:
+- /location/of/adguard-home:/opt/adguardhome/work
+- /location/of/adguard-home/conf:/opt/adguardhome/conf
+restart: always
+
+jdownloader:
+container_name: jdownloader
+image: jlesage/jdownloader:armhf-1.0.2
+ports:
+- "5800:5800"
+- "3129:3129"
+volumes:
+- /location/of/jdownloader:/config:rw
+- /location/of/downloads:/output:rw
+restart: always
+
+transmission:
+container_name: transmission
+image: dperson/transmission:armhf
+ports:
+- "9091:9091"
+- "51413:51413/tcp"
+- "51413:51413/udp"
+volumes:
+- /location/of/downloads:/var/lib/transmission-daemon/downloads:rw
+- /location/of/transmission:/etc/transmission-daemon:rw
+restart: always
+
+handbrake:
+container_name: handbrake
+image: jlesage/handbrake:armhf-1.3.3
+ports:
+- "5800:5800"
+volumes:
+- /location/of/input:/input:ro
+- /location/of/output:/output:rw
+restart: always
+
+wg-easy:
+container_name: wg-easy
+image: nickadam/wg-easy-arm
+privileged: true
+ports:
+- "51820:51820/udp"
+volumes:
+- /location/of/wg-easy:/root/wg-easy
+restart: always
+
+overseerr:
+container_name: overseerr
+image: overseerr/overseerr:v2.21.0
+ports:
+- "5055:5055"
+environment:
+- PUID=1000
+- PGID=1000
+- TZ=America/Sao_Paulo
+volumes:
+- /location/of/overseerr/data:/data
+restart: always
+
+mapos:
+container_name: mapos
+image: mapos/mapos:latest-arm
+restart: always
+
+glpi:
+container_name: glpi
+image: linuxserver/glpi:arm32v7-latest
+ports:
+- "80:80"
+- "443:443"
+volumes:
+- /location/of/glpi/config:/config
+environment:
+- PUID=1000
+- PGID=1000
+- TZ=America/Sao_Paulo
+restart: always
+
+zabbix:
+container_name: zabbix
+image: zabbix/zabbix-server-mysql:ubuntu-latest
+ports:
+- "10051:10051"
+- "80:8080"
+environment:
+- DB_SERVER_HOST=db
+- MYSQL_DB=zabbix
+- MYSQL_USER=zabbix
+- MYSQL_PASSWORD=mypassword
+volumes:
+- /location/of/zabbix/data:/var/lib/mysql
+restart: always
+
+checkmk:
+container_name: checkmk
+image: oznu/check-mk-ce:arm32v7-latest
+ports:
+- "8080:5000"
+volumes:
+- /location/of/checkmk/config:/config
+- /var/run/docker.sock:/var/run/docker.sock
+restart: always
+
+EOF
+
+# Inicia os containers
+sudo docker-compose up -d
+
+# Pausa o script para exibir o status dos containers
+read -p "Pressione enter para exibir o status dos containers."
+sudo docker-compose ps
+
+echo "Todas as etapas foram concluídas com sucesso!"
