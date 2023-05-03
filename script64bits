@@ -1,0 +1,446 @@
+#!/bin/bash
+
+# Atualiza o Ubuntu
+sudo apt update && sudo apt upgrade -y && sudo apt autoremove
+
+# Cria uma pasta Docker na raíz
+sudo mkdir /Docker
+
+# Instala Docker e Docker-Compose
+sudo apt install docker.io docker-compose -y
+
+# Acessa a pasta Docker e cria o arquivo docker-compose.yml com os containers especificados
+cd /Docker
+sudo touch docker-compose.yml
+sudo cat << EOF > docker-compose.yml
+version: '3'
+
+services:
+plex:
+image: plexinc/pms-docker
+container_name: plex
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/plex/config:/config
+- /Docker/plex/tvshows:/data/tvshows
+- /Docker/plex/movies:/data/movies
+
+jellyfin:
+image: jellyfin/jellyfin
+container_name: jellyfin
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/jellyfin/config:/config
+- /Docker/jellyfin/media:/data
+
+db:
+image: mariadb
+command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+restart: always
+volumes:
+- db:/var/lib/mysql
+environment:
+- MYSQL_ROOT_PASSWORD=your_password
+- MYSQL_DATABASE=nextcloud
+- MYSQL_USER=nextcloud
+- MYSQL_PASSWORD=your_password
+
+redis:
+image: redis:alpine
+restart: always
+
+nextcloud:
+image: nextcloud
+container_name: nextcloud
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+links:
+- db
+- redis
+volumes:
+- files:/var/www/html
+volumes:
+- /Docker/nextcloud:/var/www/html
+restart: always
+
+radarr:
+image: linuxserver/radarr
+container_name: radarr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/radarr/config:/config
+- /Docker/radarr/downloads:/downloads
+- /Docker/radarr/movies:/movies
+
+sonarr:
+image: linuxserver/sonarr
+container_name: sonarr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/sonarr/config:/config
+- /Docker/sonarr/downloads:/downloads
+- /Docker/sonarr/tvshows:/tv
+
+lidarr:
+image: linuxserver/lidarr
+container_name: lidarr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/lidarr/config:/config
+- /Docker/lidarr/downloads:/downloads
+- /Docker/lidarr/music:/music
+
+jackett:
+image: linuxserver/jackett
+container_name: jackett
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/jackett/config:/config
+- /Docker/jackett/torrents:/downloads
+
+airsonic-advanced:
+image: airsonic/airsonic-advanced
+container_name: airsonic-advanced
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/airsonic-advanced:/media
+
+bazarr:
+image: linuxserver/bazarr
+container_name: bazarr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/bazarr/config:/config
+- /Docker/bazarr/subtitles:/subtitles
+- /Docker/bazarr/movies:/movies
+- /Docker/bazarr/tv:/tv
+
+cockpit:
+image: linuxserver/cockpit
+container_name: cockpit
+restart: unless-stopped
+network_mode: host
+
+heimdall:
+image: linuxserver/heimdall
+container_name: heimdall
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+uptime-kuma:
+image: lusotycoon/uptime-kuma
+container_name: uptime-kuma
+restart: unless-stopped
+network_mode: host
+
+nginx-proxy-manager:
+image: jlesage/nginx-proxy-manager
+container_name: nginx-proxy-manager
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/nginx-proxy-manager/data:/data
+
+grafana:
+image: grafana/grafana
+container_name: grafana
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/grafana/data:/var/lib/grafana
+
+portainer:
+image: portainer/portainer-ce
+container_name: portainer
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock
+- /Docker/portainer/data:/data
+
+dozzle:
+image: amir20/dozzle
+container_name: dozzle
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+filebrowser:
+image: filebrowser/filebrowser
+container_name: filebrowser
+restart: unless-stopped
+network_mode: host
+volumes:
+- /Docker/filebrowser/config:/config
+- /Docker:/files
+
+tautulli:
+image: linuxserver/tautulli
+container_name: tautulli
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/tautulli/config:/config
+
+ombi:
+image: linuxserver/ombi
+container_name: ombi
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/ombi/config:/config
+
+prowlarr:
+image: prowlarr/prowlarr
+container_name: prowlarr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+metube:
+image: stojanovic/metube
+container_name: metube
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+netdata:
+image: netdata/netdata
+container_name: netdata
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+cap_add:
+- SYS_PTRACE
+- NET_RAW
+- NET_ADMIN
+- SYS_ADMIN
+
+influxdb:
+image: influxdb
+container_name: influxdb
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+- INFLUXDB_ADMIN_ENABLE=true
+- INFLUXDB_ADMIN_USER=admin
+- INFLUXDB_ADMIN_PASSWORD=admin
+- INFLUXDB_GRAPHITE_PROTOCOL=https
+volumes:
+- /Docker/influxdb:/var/lib/influxdb
+
+vaultwarden:
+image: vaultwarden/server:latest
+container_name: vaultwarden
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+- ROCKET_TLS="{certs=\"/config/vaultwarden.crt\",key=\"/config/vaultwarden.key\"}"
+volumes:
+- /Docker/vaultwarden:/data
+
+adguardhome:
+image: adguard/adguardhome
+container_name: adguardhome
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/adguardhome/config:/opt/adguardhome/conf
+
+jdownloader:
+image: jlesage/jdownloader-2
+container_name: jdownloader
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/jdownloader/config:/config
+- /Docker/jdownloader/downloads:/downloads
+
+transmission:
+image: linuxserver/transmission
+container_name: transmission
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/transmission/config:/config
+- /Docker/transmission/downloads:/downloads
+
+handbrake:
+image: handbrake/handbrake
+container_name: handbrake
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+mkvtoolnix:
+image: jlesage/mkvtoolnix
+container_name: mkvtoolnix
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+makemkv:
+image: jlesage/makemkv
+container_name: makemkv
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+
+wg-easy:
+image: artiume/docker-wg-easy
+container_name: wg-easy
+restart: unless-stopped
+network_mode: host
+privileged: true
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/wg-easy:/data
+
+mylar3:
+image: mylar3/mylar3
+container_name: mylar3
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+volumes:
+- /Docker/mylar3/config:/config
+- /Docker/mylar3/comics:/comics
+
+overseerr:
+image: overseerr/overseerr
+container_name: overseerr
+restart: unless-stopped
+network_mode: host
+environment:
+- PUID=$PUID
+- PGID=$PGID
+- TZ=$TZ
+- BASE_URL=localhost:5055
+volumes:
+- /Docker/overseerr:/data
+EOF
+
+# Cria um arquivo .env com as variáveis de ambiente
+sudo touch .env
+sudo cat << EOF > .env
+PGID=1000
+PUID=1000
+TZ=america/fortaleza
+EOF
+
+```
+
+Lembre-se de salvar o arquivo com uma extensão .sh, como por exemplo, `setup_docker.sh`, torná-lo executável com `sudo chmod +x setup_docker.sh` e então executá-lo com `sudo ./setup_docker.sh`.
