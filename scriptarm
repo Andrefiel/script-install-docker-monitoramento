@@ -1,0 +1,476 @@
+#!/bin/bash
+
+# Atualiza o Ubuntu
+sudo apt update
+sudo apt upgrade -y
+sudo apt autoremove -y
+
+# Cria a pasta docker na raiz
+sudo mkdir /docker
+
+# Instala o Docker e Docker-Compose
+sudo apt install docker.io docker-compose -y
+
+# Acessa a pasta docker
+cd /docker
+
+# Cria o arquivo docker-compose.yml
+sudo touch docker-compose.yml
+
+# Escreve a configuração do arquivo docker-compose.yml
+cat << EOF | sudo tee docker-compose.yml
+
+version: '3'
+
+services:
+plex:
+image: linuxserver/plex:arm32v7-latest
+container_name: plex
+restart: unless-stopped
+ports:
+- 32400:32400/tcp
+- 3005:3005/tcp
+- 8324:8324/tcp
+- 32469:32469/tcp
+- 1900:1900/udp
+- 32410:32410/udp
+- 32412:32412/udp
+- 32413:32413/udp
+- 32414:32414/udp
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/plex:/config
+- /media:/data
+
+jellyfin:
+image: jellyfin/jellyfin:latest-arm32v7
+container_name: jellyfin
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/jellyfin:/config
+- /media:/data
+
+nextcloud:
+image: linuxserver/nextcloud:arm32v7-latest
+container_name: nextcloud
+restart: unless-stopped
+ports:
+- 80:80/tcp
+- 443:443/tcp
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/nextcloud:/config
+- /media:/data
+
+db:
+image: mariadb:latest
+container_name: db
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- MYSQL_ROOT_PASSWORD=your_mysql_root_password
+- MYSQL_DATABASE=your_mysql_database_name
+- MYSQL_USER=your_mysql_database_user
+- MYSQL_PASSWORD=your_mysql_database_password
+volumes:
+- /docker/db:/var/lib/mysql
+
+radarr:
+image: linuxserver/radarr:arm32v7-latest
+container_name: radarr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/radarr:/config
+- /media:/data
+
+sonarr:
+image: linuxserver/sonarr:arm32v7-latest
+container_name: sonarr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/sonarr:/config
+- /media:/data
+
+lidarr:
+image: linuxserver/lidarr:arm32v7-latest
+container_name: lidarr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/lidarr:/config
+- /media:/data
+
+jackett:
+image: linuxserver/jackett:arm32v7-latest
+container_name: jackett
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/jackett:/config
+- /media:/data
+
+airsonic:
+image: linuxserver/airsonic:arm32v7-latest
+container_name: airsonic
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/airsonic:/config
+- /media:/data
+
+bazarr:
+image: linuxserver/bazarr:arm32v7-latest
+container_name: bazarr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/bazarr:/config
+- /media:/data
+
+cockpit:
+image: linuxserver/cockpit:arm32v7-latest
+container_name: cockpit
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 2022:22/tcp
+
+heimdall:
+image: linuxserver/heimdall:arm32v7-latest
+container_name: heimdall
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/heimdall:/config
+
+uptime-kuma:
+image: uptimekuma/uptime-kuma:arm32v7-latest
+container_name: uptime-kuma
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 3030:3030/tcp
+
+nginx-proxy-manager:
+image: jc21/nginx-proxy-manager:arm32v7-latest
+container_name: nginx-proxy-manager
+restart: unless-stopped
+ports:
+- 80:80/tcp
+- 81:81/tcp
+- 443:443/tcp
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/nginx-proxy-manager/data:/data
+- /docker/nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+- /docker/nginx-proxy-manager/nginx:/etc/nginx
+
+grafana:
+image: grafana/grafana:latest-armhf
+container_name: grafana
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 3000:3000/tcp
+
+portainer:
+image: portainer/portainer-ce:arm
+container_name: portainer
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 9000:9000/tcp
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock
+- /docker/portainer:/data
+
+dozzle:
+image: amir20/dozzle:arm32v7-latest
+container_name: dozzle
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 8888:8080/tcp
+volumes:
+- /var/run/docker.sock:/var/run/docker.sock
+
+filebrowser:
+image: filebrowser/filebrowser:armhf
+container_name: filebrowser
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+ports:
+- 8080:80/tcp
+volumes:
+- /docker/filebrowser:/config
+- /media:/data
+
+tautulli:
+image: linuxserver/tautulli:arm32v7-latest
+container_name: tautulli
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/tautulli:/config
+- /media:/data
+
+ombi:
+image: linuxserver/ombi:arm32v7-latest
+container_name: ombi
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/ombi:/config
+- /media:/data
+
+prowlarr:
+image: linuxserver/prowlarr:arm32v7-latest
+container_name: prowlarr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/prowlarr:/config
+- /media:/data
+
+netdata:
+image: netdata/netdata:armhf-latest
+container_name: netdata
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 19999:19999/tcp
+cap_add:
+- SYS_PTRACE
+- SYS_ADMIN
+security_opt:
+- apparmor:unconfined
+volumes:
+- /proc:/host/proc:ro
+- /sys:/host/sys:ro
+- /var/run/docker.sock:/var/run/docker.sock
+
+influxdb:
+image: arm32v7/influxdb:latest
+container_name: influxdb
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- INFLUXDB_DB=your_influxdb_database_name
+- INFLUXDB_ADMIN_USER=admin
+- INFLUXDB_ADMIN_PASSWORD=your_influxdb_admin_password
+- INFLUXDB_USER=your_influxdb_user
+- INFLUXDB_USER_PASSWORD=your_influxdb_user_password
+volumes:
+- /docker/influxdb:/var/lib/influxdb
+
+jdownloader:
+image: jlesage/jdownloader-2:armhf-latest
+container_name: jdownloader
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+- JAVA_OPTS="-Xmx512M -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true"
+volumes:
+- /docker/jdownloader:/config
+- /media:/data
+
+transmission:
+image: linuxserver/transmission:arm32v7-latest
+container_name: transmission
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+- TRANSMISSION_WEB_HOME=/combustion-release/ #optional
+volumes:
+- /docker/transmission:/config
+- /media:/data
+
+handbrake:
+image: jlesage/handbrake:armhf-latest
+container_name: handbrake
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/handbrake:/config
+- /media:/data
+
+wg-easy:
+image: wg-easy:latest
+container_name: wg-easy
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 51820:51820/udp
+volumes:
+- /docker/wg-easy:/config
+
+overseerr:
+image: overseerr/overseerr:arm32v7-latest
+container_name: overseerr
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- PUID=1000
+- PGID=1000
+volumes:
+- /docker/overseerr:/config
+- /media:/data
+
+mapos:
+image: mapos/mapos:arm32v7-latest
+container_name: mapos
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- ovpnconfig=your_openvpn_config_file_name.ovpn
+cap_add:
+- NET_ADMIN
+- SYS_MODULE
+devices:
+- /dev/net/tun:/dev/net/tun
+volumes:
+- /docker/mapos:/config:Z
+- /usr/src/app/haproxy:/usr/local/etc/haproxy
+- /usr/src/app/netfilter:/etc/netfilter
+
+glpi:
+image: glpi/glpi:arm32v7-latest
+container_name: glpi
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+ports:
+- 80:80/tcp
+- 443:443/tcp
+volumes:
+- /docker/glpi:/var/www/glpi
+
+zabbix-server-mysql:
+image: zabbix/zabbix-server-mysql:alpine-5.0-latest
+container_name: zabbix-server-mysql
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- MYSQL_DATABASE=your_zabbix_database_name
+- MYSQL_USER=your_zabbix_database_user
+- MYSQL_PASSWORD=your_zabbix_database_password
+- MYSQL_ROOT_PASSWORD=your_mysql_root_password
+ports:
+- 10051:10051/tcp
+volumes:
+- /docker/zabbix-server-mysql/data:/var/lib/mysql
+
+zabbix-web-nginx-mysql:
+image: zabbix/zabbix-web-nginx-mysql:alpine-5.0-latest
+container_name: zabbix-web-nginx-mysql
+restart: unless-stopped
+environment:
+- TZ=America/Fortaleza
+- DB_SERVER_HOST=zabbix-server-mysql
+- MYSQL_DATABASE=your_zabbix_database_name
+- MYSQL_USER=your_zabbix_database_user
+- MYSQL_PASSWORD=your_zabbix_database_password
+- MYSQL_ROOT_PASSWORD=your_mysql_root_password
+volumes:
+- /docker/zabbix-web-nginx-mysql/html:/usr/share/zabbix
+- /docker/zabbix-web-nginx-mysql/nginx.conf:/etc/nginx/conf.d/default.conf
+
+pi-hole:
+image: pihole/pihole:latest-armhf
+container_name: pi-hole
+ports:
+- "53:53/tcp"
+- "53:53/udp"
+- "67:67/tcp"
+- "67:67/udp"
+- "80:80/tcp"
+- "443:443/tcp"
+environment:
+- TZ=America/Fortaleza
+- WEBPASSWORD=your_pihole_web_password
+volumes:
+- /docker/pi-hole/config:/etc/pihole/
+- /docker/pi-hole/dnsmasq.d:/etc/dnsmasq.d/
+EOF
+
+# Cria o arquivo .env
+sudo touch .env
+
+# Escreve a configuração do arquivo .env
+cat << EOF | sudo tee .env
+
+PUID=1000
+PGID=1000
+TZ=America/Fortaleza
+EOF
+
+```
+
+Substitua `your_mysql_root_password`, `your_mysql_database_name`, `your_mysql_database_user`, `your_mysql_database_password`, `your_influxdb_database_name`, `your_influxdb_admin_password`, `your_influxdb_user`, `your_influxdb_user_password`, `your_openvpn_config_file_name`, `your_pihole_web_password`, com as informações relevantes para sua configuração.
+
+Salve o script com um nome, por ex. setup.sh, torne-o executável com `sudo chmod +x setup.sh` e o execute com `./setup.sh` para executar o script. Verifique se todos os contêineres foram iniciados com `docker ps`.
+
+Created by https://GPTGO.ai
+#gptgo #chatgpt #freechatgpt #chatgptfree
